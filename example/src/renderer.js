@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+window.THREE = THREE;
 
 const container = document.createElement('div')
 container.style.position = 'fixed'

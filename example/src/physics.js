@@ -22,6 +22,8 @@ const PhysX = physx({
   },
 })
 
+window.PhysX = PhysX;
+
 export const onLoad = _cb => {
   cb = _cb
   if (loaded) cb()
