@@ -66,6 +66,11 @@ export const init = entities => {
         entity.model.size[1],
         entity.model.size[2]
       )
+    } else if (entity.model.type === 'sphere') {
+      geometry = new THREE.SphereGeometry(
+        entity.model.size,
+        24, 24
+      )
     }
     const material = new THREE.MeshStandardMaterial({ color: '#65C7F1' })
     const mesh = new THREE.Mesh(geometry, material)
