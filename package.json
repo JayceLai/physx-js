@@ -1,8 +1,8 @@
 {
   "name": "@cocos/physx",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "author": "jiaxin, Ash Connell <hello@ashconnell.com>",
-  "main": "dist/physx.release.asm.js",
+  "main": "builds/physx.release.asm.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/JayceLai/physx-js.git"
