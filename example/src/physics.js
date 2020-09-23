@@ -1,6 +1,10 @@
 import physx from 'physx-js'
 import physxModule from 'physx-js/dist/physx.release.wasm'
 
+// import physx from '../../src/dist/physx.release.wasm.js'
+// import physxModule from '../../src/dist/physx.release.wasm.wasm'
+// import physx from '../../src/dist/physx.release.asm'
+
 let loaded = false
 let cb = null
 let physics

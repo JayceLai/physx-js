@@ -1,4 +1,4 @@
-export const makeEntities = () => {
+const makeEntities = () => {
   let ids = 0
   const entities = []
 
