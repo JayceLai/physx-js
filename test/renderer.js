@@ -95,5 +95,6 @@ var renderer = (() => {
   return {
     init,
     update,
+    meshes
   }
 })();

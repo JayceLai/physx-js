@@ -4,6 +4,9 @@ var physics = (() => {
   let physics
   let scene
   let bodies = {}
+  let shapes = []
+  let geometries = []
+  let cache = {}
 
   const PhysX = PHYSX({
     // locateFile (path) {
@@ -67,15 +70,25 @@ var physics = (() => {
     entities.forEach(entity => {
       let geometry
       if (entity.body.type === 'box') {
-        geometry = new PhysX.PxBoxGeometry(
-          // PhysX uses half-extents
-          entity.body.size[0] / 2,
-          entity.body.size[1] / 2,
-          entity.body.size[2] / 2
-        )
-      }
-      if (entity.body.type === 'sphere') {
-        geometry = new PhysX.PxSphereGeometry(entity.body.size)
+        const hx = entity.body.size[0] / 2;
+        const hy = entity.body.size[1] / 2;
+        const hz = entity.body.size[2] / 2;
+        const key = `${hx}-${hy}-${hz}`;
+        if (!cache[key]) {
+          cache[key] = new PhysX.PxBoxGeometry(
+            // PhysX uses half-extents
+            entity.body.size[0] / 2,
+            entity.body.size[1] / 2,
+            entity.body.size[2] / 2
+          )
+        }
+        geometry = cache[key];
+      } else if (entity.body.type === 'sphere') {
+        const key = entity.body.size + '';
+        if (!cache[key]) {
+          cache[key] = new PhysX.PxSphereGeometry(entity.body.size)
+        }
+        geometry = cache[key];
       }
       const material = physics.createMaterial(0.2, 0.2, 0.2)
       const flags = new PhysX.PxShapeFlags(
@@ -99,12 +112,25 @@ var physics = (() => {
       let body
       if (entity.body.dynamic) {
         body = physics.createRigidDynamic(transform)
+        body.setMass(1)
       } else {
         body = physics.createRigidStatic(transform)
       }
+
+      // if (entity.id == 1) {
+      //   entity.body.size[0] /= 2;
+      //   entity.model.size[0] /= 2;
+      //   var he = geometry.halfExtents;
+      //   geometry.halfExtents = { x: entity.body.size[0] / 2, y: he.y, z: he.z };
+      //   shape.setGeometry(geometry);
+      // }
+
       body.attachShape(shape)
       bodies[entity.id] = body
+      shapes.push(shape);
+      geometries.push(geometry);
       scene.addActor(body, null)
+      shape.setSimulationFilterData(new PhysX.PxFilterData(1, 1, 0, 0))
     })
   }
 
@@ -121,12 +147,34 @@ var physics = (() => {
       entity.transform.rotation[1] = transform.rotation.y
       entity.transform.rotation[2] = transform.rotation.z
       entity.transform.rotation[3] = transform.rotation.w
+      body.setGlobalPose(transform, true)
     })
+  }
+
+  const updateSize = (index, type, size) => {
+    var entity = entities[index];
+    var geo = geometries[index];
+    if (type == 0) {//box
+      renderer.meshes[entity.id].scale.x = size[0] / entity.model.size[0];
+      renderer.meshes[entity.id].scale.y = size[1] / entity.model.size[1];
+      renderer.meshes[entity.id].scale.z = size[2] / entity.model.size[2];
+      geo.halfExtents = { x: size[0] / 2, y: size[1] / 2, z: size[2] / 2 }
+    } else if (type == 1) {//sphere
+      geo.radius = size
+      renderer.meshes[entity.id].scale.set(1,1,1)
+      renderer.meshes[entity.id].scale.multiplyScalar(size / entity.model.size);
+    }
+    entity.body.size = size
+    shapes[index].setGeometry(geo)
   }
 
   return {
     init,
     update,
     onLoad,
+    updateSize,
+    bodies,
+    shapes,
+    geometries
   }
 })();

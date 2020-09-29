@@ -10,11 +10,11 @@ const makeEntities = () => {
     },
     model: {
       type: 'box',
-      size: [10, 1, 10],
+      size: [20, 1, 20],
     },
     body: {
       type: 'box',
-      size: [10, 1, 10],
+      size: [20, 1, 20],
       dynamic: false,
     },
   })
