@@ -7,6 +7,10 @@ var physics = (() => {
   let shapes = []
   let geometries = []
   let cache = {}
+  let material = null
+  let vectorMaterial = null
+  let BOX_GEO = null
+  let SPHERE_GEO = null
 
   const PhysX = PHYSX({
     // locateFile (path) {
@@ -64,38 +68,36 @@ var physics = (() => {
       physxSimulationCallbackInstance
     )
     scene = physics.createScene(sceneDesc)
+
+    material = physics.createMaterial(0.2, 0.2, 0.2)
+    vectorMaterial = new PhysX.VectorPxMaterial()
+    vectorMaterial.push_back(material)
+
+    PhysX.physics = physics;
+    PhysX.scene = scene;
   }
 
   const init = entities => {
     entities.forEach(entity => {
       let geometry
       if (entity.body.type === 'box') {
+        if (!BOX_GEO) BOX_GEO = new PhysX.PxBoxGeometry(0.5, 0.5, 0.5);
         const hx = entity.body.size[0] / 2;
         const hy = entity.body.size[1] / 2;
         const hz = entity.body.size[2] / 2;
-        const key = `${hx}-${hy}-${hz}`;
-        if (!cache[key]) {
-          cache[key] = new PhysX.PxBoxGeometry(
-            // PhysX uses half-extents
-            entity.body.size[0] / 2,
-            entity.body.size[1] / 2,
-            entity.body.size[2] / 2
-          )
-        }
-        geometry = cache[key];
+        BOX_GEO.halfExtents = { x: hx, y: hy, z: hz }
+        geometry = BOX_GEO
       } else if (entity.body.type === 'sphere') {
-        const key = entity.body.size + '';
-        if (!cache[key]) {
-          cache[key] = new PhysX.PxSphereGeometry(entity.body.size)
-        }
-        geometry = cache[key];
+        if (!SPHERE_GEO) SPHERE_GEO = new PhysX.PxSphereGeometry(0.5)
+        SPHERE_GEO.radius = entity.body.size
+        geometry = SPHERE_GEO
       }
-      const material = physics.createMaterial(0.2, 0.2, 0.2)
       const flags = new PhysX.PxShapeFlags(
         PhysX.PxShapeFlag.eSCENE_QUERY_SHAPE.value |
         PhysX.PxShapeFlag.eSIMULATION_SHAPE.value
       )
-      const shape = physics.createShape(geometry, material, false, flags)
+      // var material2 = physics.createMaterial(0.2, 0.2, 0.2)
+      const shape = physics.createShape(geometry, material, true, flags)
       const transform = {
         translation: {
           x: entity.transform.position[0],
@@ -117,13 +119,17 @@ var physics = (() => {
         body = physics.createRigidStatic(transform)
       }
 
-      // if (entity.id == 1) {
-      //   entity.body.size[0] /= 2;
-      //   entity.model.size[0] /= 2;
-      //   var he = geometry.halfExtents;
-      //   geometry.halfExtents = { x: entity.body.size[0] / 2, y: he.y, z: he.z };
-      //   shape.setGeometry(geometry);
-      // }
+      if (entity.id == 1) {
+        // update size
+        // entity.body.size[0] /= 2;
+        // entity.model.size[0] /= 2;
+        // var he = geometry.halfExtents;
+        // geometry.halfExtents = { x: entity.body.size[0] / 2, y: he.y, z: he.z };
+        // shape.setGeometry(geometry);
+
+        // update material
+        // shape.setMaterials(vectorMaterial);
+      }
 
       body.attachShape(shape)
       bodies[entity.id] = body
@@ -160,12 +166,29 @@ var physics = (() => {
       renderer.meshes[entity.id].scale.z = size[2] / entity.model.size[2];
       geo.halfExtents = { x: size[0] / 2, y: size[1] / 2, z: size[2] / 2 }
     } else if (type == 1) {//sphere
-      geo.radius = size
-      renderer.meshes[entity.id].scale.set(1,1,1)
+      renderer.meshes[entity.id].scale.set(1, 1, 1)
       renderer.meshes[entity.id].scale.multiplyScalar(size / entity.model.size);
+      geo.radius = size
     }
     entity.body.size = size
     shapes[index].setGeometry(geo)
+  }
+
+  const updateMaterial = (index, sf, df, r) => {
+    material.setStaticFriction(sf);
+    material.setDynamicFriction(df);
+    material.setRestitution(r);
+    // shapes[index].setMaterials(vectorMaterial);
+  }
+
+  const updateIsTrigger = (index, v) => {
+    if (v) {
+      shapes[index].setFlag(PhysX.PxShapeFlag.eSIMULATION_SHAPE, !v)
+      shapes[index].setFlag(PhysX.PxShapeFlag.eTRIGGER_SHAPE, v);
+    } else {
+      shapes[index].setFlag(PhysX.PxShapeFlag.eTRIGGER_SHAPE, v);
+      shapes[index].setFlag(PhysX.PxShapeFlag.eSIMULATION_SHAPE, !v)
+    }
   }
 
   return {
@@ -173,8 +196,12 @@ var physics = (() => {
     update,
     onLoad,
     updateSize,
+    updateMaterial,
+    updateIsTrigger,
     bodies,
     shapes,
-    geometries
+    geometries,
+    material,
+    vectorMaterial
   }
 })();

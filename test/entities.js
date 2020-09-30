@@ -19,7 +19,7 @@ const makeEntities = () => {
     },
   })
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 500; i++) {
     for (let j = 0; j < 5; j++) {
       entities.push({
         id: ++ids,
@@ -44,8 +44,8 @@ const makeEntities = () => {
     }
   }
 
-  for (let i = 0; i < 5; i++) {
-    for (let j = 0; j < 5; j++) {
+  for (let i = 0; i < 90; i++) {
+    for (let j = 0; j < 10; j++) {
       entities.push({
         id: ++ids,
         transform: {
