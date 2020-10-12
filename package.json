@@ -1,6 +1,6 @@
 {
   "name": "@cocos/physx",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "author": "jiaxin, Ash Connell <hello@ashconnell.com>",
   "main": "builds/physx.release.asm.js",
   "repository": {
