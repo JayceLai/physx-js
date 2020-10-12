@@ -1,3 +1,6 @@
+
+// npm publish --access public --tag beta
+
 console.log(1)
 const physics = physx.createPhysics();
 console.log(2)
