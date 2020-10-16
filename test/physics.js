@@ -3,6 +3,7 @@ var physics = (() => {
   let cb = null
   let physics
   let scene
+  let cooking
   let bodies = {}
   let shapes = []
   let geometries = []
@@ -69,12 +70,19 @@ var physics = (() => {
     )
     scene = physics.createScene(sceneDesc)
 
-    material = physics.createMaterial(0.2, 0.2, 0.2)
+    material = physics.createMaterial(0.6, 0.6, 0.2)
     vectorMaterial = new PhysX.VectorPxMaterial()
     vectorMaterial.push_back(material)
 
+    cooking = PhysX.PxCreateCooking(
+      version,
+      foundation,
+      new PhysX.PxCookingParams(physics.getTolerancesScale())
+    )
+
     PhysX.physics = physics;
     PhysX.scene = scene;
+    PhysX.cooking = cooking;
   }
 
   const init = entities => {
@@ -91,6 +99,57 @@ var physics = (() => {
         if (!SPHERE_GEO) SPHERE_GEO = new PhysX.PxSphereGeometry(0.5)
         SPHERE_GEO.radius = entity.body.size
         geometry = SPHERE_GEO
+      } else if (entity.body.type === 'convex') {
+        const g = entity.model.geometry;
+        const l = g.vertices.length;
+        const vArr = new PhysX.PxVec3Vector();
+        for (let i = 0; i < l; i++) {
+          vArr.push_back(g.vertices[i])
+        }
+        const convexMesh = cooking.createConvexMesh(vArr, physics);
+        const meshScale = new PhysX.PxMeshScale({ x: 1, y: 1, z: 1 }, { x: 0, y: 0, z: 0, w: 1 })
+        geometry = new PhysX.PxConvexMeshGeometry(convexMesh, meshScale, new PhysX.PxConvexMeshGeometryFlags(1))
+      } else if (entity.body.type === 'trimesh') {
+        const g = entity.model.geometry;
+        const l = g.vertices.length;
+        const ptr = PhysX._malloc(4 * l * 3);
+        let offset = 0;
+        for (let i = 0; i < l; i++) {
+          PhysX.HEAPF32[ptr + offset >> 2] = g.vertices[i].x;
+          var x = PhysX.HEAPF32[ptr + offset >> 2];
+          offset += 4;
+          PhysX.HEAPF32[ptr + offset >> 2] = g.vertices[i].y;
+          var y = PhysX.HEAPF32[ptr + offset >> 2];
+          offset += 4;
+          PhysX.HEAPF32[ptr + offset >> 2] = g.vertices[i].z;
+          var z = PhysX.HEAPF32[ptr + offset >> 2];
+          offset += 4;
+          console.log(g.vertices[i].x, g.vertices[i].y, g.vertices[i].z);
+          console.error(x, y, z)
+        }
+
+        const l2 = g.faces.length;
+        const ptr2 = PhysX._malloc(2 * l2 * 3);
+        let offset2 = 0;
+        for (let i = 0; i < l2; i++) {
+          PhysX.HEAPU16[ptr2 + offset2 >> 2] = g.faces[i].a;
+          var a = PhysX.HEAPU16[ptr2 + offset2 >> 2];
+          offset2 += 2;
+          PhysX.HEAPU16[ptr2 + offset2 >> 2] = g.faces[i].b;
+          var b = PhysX.HEAPU16[ptr2 + offset2 >> 2];
+          offset2 += 2;
+          PhysX.HEAPU16[ptr2 + offset2 >> 2] = g.faces[i].c;
+          var c = PhysX.HEAPU16[ptr2 + offset2 >> 2];
+          offset2 += 2;
+          console.log(g.faces[i].a, g.faces[i].b, g.faces[i].c);
+          console.error(a, b, c)
+        }
+
+        const trimesh = cooking.createTriMesh(ptr, l, ptr2, l2, true, physics);
+        const meshScale = new PhysX.PxMeshScale({ x: 1, y: 1, z: 1 }, { x: 0, y: 0, z: 0, w: 1 })
+        geometry = new PhysX.PxTriangleMeshGeometry(trimesh, meshScale, new PhysX.PxMeshGeometryFlags(0))
+        PhysX._free(ptr)
+        PhysX._free(ptr2)
       }
       const flags = new PhysX.PxShapeFlags(
         PhysX.PxShapeFlag.eSCENE_QUERY_SHAPE.value |

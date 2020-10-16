@@ -11,7 +11,7 @@ const update = () => {
 }
 
 physics.onLoad(() => {
-  physics.init(entities)
   renderer.init(entities)
+  physics.init(entities)
   update()
 })

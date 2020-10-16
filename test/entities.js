@@ -19,7 +19,55 @@ const makeEntities = () => {
     },
   })
 
-  for (let i = 0; i < 500; i++) {
+  for (let i = 0; i < 5; i++) {
+    for (let j = 0; j < 5; j++) {
+      entities.push({
+        id: ++ids,
+        transform: {
+          position: [
+            -2.5 + i + 0.1 * i,
+            12,
+            -2.5 + j + 0.1 * j,
+          ],
+          rotation: [0, 0, 0, 1],
+        },
+        model: {
+          type: 'cone',
+          size: [0.5, 1, 3],
+        },
+        body: {
+          type: 'convex',
+          dynamic: true,
+        },
+      })
+    }
+  }
+
+  for (let i = 0; i < 2; i++) {
+    for (let j = 0; j < 5; j++) {
+      entities.push({
+        id: ++ids,
+        transform: {
+          position: [
+            -2.5 + i + 0.5 * i,
+            3,
+            -2.5 + j + 0.5 * j,
+          ],
+          rotation: [0, 0, 0, 1],
+        },
+        model: {
+          type: 'box',
+          size: [1, 1, 1],
+        },
+        body: {
+          type: 'trimesh',
+          dynamic: false,
+        },
+      })
+    }
+  }
+
+  for (let i = 0; i < 5; i++) {
     for (let j = 0; j < 5; j++) {
       entities.push({
         id: ++ids,
@@ -44,8 +92,8 @@ const makeEntities = () => {
     }
   }
 
-  for (let i = 0; i < 90; i++) {
-    for (let j = 0; j < 10; j++) {
+  for (let i = 0; i < 9; i++) {
+    for (let j = 0; j < 1; j++) {
       entities.push({
         id: ++ids,
         transform: {
