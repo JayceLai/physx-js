@@ -112,44 +112,20 @@ var physics = (() => {
       } else if (entity.body.type === 'trimesh') {
         const g = entity.model.geometry;
         const l = g.vertices.length;
-        const ptr = PhysX._malloc(4 * l * 3);
-        let offset = 0;
+        const vArr = new PhysX.PxVec3Vector();
         for (let i = 0; i < l; i++) {
-          PhysX.HEAPF32[ptr + offset >> 2] = g.vertices[i].x;
-          var x = PhysX.HEAPF32[ptr + offset >> 2];
-          offset += 4;
-          PhysX.HEAPF32[ptr + offset >> 2] = g.vertices[i].y;
-          var y = PhysX.HEAPF32[ptr + offset >> 2];
-          offset += 4;
-          PhysX.HEAPF32[ptr + offset >> 2] = g.vertices[i].z;
-          var z = PhysX.HEAPF32[ptr + offset >> 2];
-          offset += 4;
-          console.log(g.vertices[i].x, g.vertices[i].y, g.vertices[i].z);
-          console.error(x, y, z)
+          vArr.push_back(g.vertices[i])
         }
-
         const l2 = g.faces.length;
-        const ptr2 = PhysX._malloc(2 * l2 * 3);
-        let offset2 = 0;
+        const iArr = new PhysX.PxU16Vector();
         for (let i = 0; i < l2; i++) {
-          PhysX.HEAPU16[ptr2 + offset2 >> 2] = g.faces[i].a;
-          var a = PhysX.HEAPU16[ptr2 + offset2 >> 2];
-          offset2 += 2;
-          PhysX.HEAPU16[ptr2 + offset2 >> 2] = g.faces[i].b;
-          var b = PhysX.HEAPU16[ptr2 + offset2 >> 2];
-          offset2 += 2;
-          PhysX.HEAPU16[ptr2 + offset2 >> 2] = g.faces[i].c;
-          var c = PhysX.HEAPU16[ptr2 + offset2 >> 2];
-          offset2 += 2;
-          console.log(g.faces[i].a, g.faces[i].b, g.faces[i].c);
-          console.error(a, b, c)
+          iArr.push_back(g.faces[i].a);iArr.push_back(g.faces[i].b);iArr.push_back(g.faces[i].c);
         }
-
-        const trimesh = cooking.createTriMesh(ptr, l, ptr2, l2, true, physics);
-        const meshScale = new PhysX.PxMeshScale({ x: 1, y: 1, z: 1 }, { x: 0, y: 0, z: 0, w: 1 })
+        const trimesh = cooking.createTriMesh2(vArr, iArr, physics);
+        const meshScale = new PhysX.PxMeshScale({ x: 1, y: 1, z: 1 }, { x: 0, y: 0, z: 0, w: 1 })        
         geometry = new PhysX.PxTriangleMeshGeometry(trimesh, meshScale, new PhysX.PxMeshGeometryFlags(0))
-        PhysX._free(ptr)
-        PhysX._free(ptr2)
+      } else if (entity.body.type === 'terrain') {
+        return;
       }
       const flags = new PhysX.PxShapeFlags(
         PhysX.PxShapeFlag.eSCENE_QUERY_SHAPE.value |
@@ -204,15 +180,17 @@ var physics = (() => {
     scene.fetchResults(true)
     entities.forEach(entity => {
       const body = bodies[entity.id]
-      const transform = body.getGlobalPose()
-      entity.transform.position[0] = transform.translation.x
-      entity.transform.position[1] = transform.translation.y
-      entity.transform.position[2] = transform.translation.z
-      entity.transform.rotation[0] = transform.rotation.x
-      entity.transform.rotation[1] = transform.rotation.y
-      entity.transform.rotation[2] = transform.rotation.z
-      entity.transform.rotation[3] = transform.rotation.w
-      body.setGlobalPose(transform, true)
+      if (body) {
+        const transform = body.getGlobalPose()
+        entity.transform.position[0] = transform.translation.x
+        entity.transform.position[1] = transform.translation.y
+        entity.transform.position[2] = transform.translation.z
+        entity.transform.rotation[0] = transform.rotation.x
+        entity.transform.rotation[1] = transform.rotation.y
+        entity.transform.rotation[2] = transform.rotation.z
+        entity.transform.rotation[3] = transform.rotation.w
+        body.setGlobalPose(transform, true)
+      }
     })
   }
 
