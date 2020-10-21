@@ -34,13 +34,18 @@ entities.push({
     position: [0, 0, 0],
     rotation: [0, 0, 0, 1],
   },
+  height: {
+    data: heights,
+    rows: terrainWidth,
+    cols: terrainDepth,
+    maxH: terrainMaxHeight,
+    minH: terrainMinHeight,
+  },
   model: {
     type: 'terrain',
-    data: heights,
   },
   body: {
     type: 'terrain',
-    data: heights,
     dynamic: false,
   },
 })

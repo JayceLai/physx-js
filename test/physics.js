@@ -13,7 +13,7 @@ var physics = (() => {
   let BOX_GEO = null
   let SPHERE_GEO = null
 
-  const PhysX = PHYSX({
+  const PX = PHYSX({
     // locateFile (path) {
     //   if (path.endsWith('.wasm')) {
     //     return physxModule
@@ -22,13 +22,13 @@ var physics = (() => {
     // },
     onRuntimeInitialized () {
       loaded = true
-      console.log('PhysX loaded')
+      console.log('PX loaded')
       setup()
       if (cb) cb()
     },
   })
 
-  window.PhysX = PhysX;
+  window.PX = PX;
 
   const onLoad = _cb => {
     cb = _cb
@@ -36,10 +36,10 @@ var physics = (() => {
   }
 
   const setup = () => {
-    const version = PhysX.PX_PHYSICS_VERSION
-    const defaultErrorCallback = new PhysX.PxDefaultErrorCallback()
-    const allocator = new PhysX.PxDefaultAllocator()
-    const foundation = PhysX.PxCreateFoundation(
+    const version = PX.PX_PHYSICS_VERSION
+    const defaultErrorCallback = new PX.PxDefaultErrorCallback()
+    const allocator = new PX.PxDefaultAllocator()
+    const foundation = PX.PxCreateFoundation(
       version,
       allocator,
       defaultErrorCallback
@@ -51,19 +51,19 @@ var physics = (() => {
       onTriggerBegin: () => { },
       onTriggerEnd: () => { },
     }
-    const physxSimulationCallbackInstance = PhysX.PxSimulationEventCallback.implement(
+    const physxSimulationCallbackInstance = PX.PxSimulationEventCallback.implement(
       triggerCallback
     )
 
-    physics = PhysX.PxCreatePhysics(
+    physics = PX.PxCreatePhysics(
       version,
       foundation,
-      new PhysX.PxTolerancesScale(),
+      new PX.PxTolerancesScale(),
       false,
       null
     )
-    PhysX.PxInitExtensions(physics, null)
-    const sceneDesc = PhysX.getDefaultSceneDesc(
+    PX.PxInitExtensions(physics, null)
+    const sceneDesc = PX.getDefaultSceneDesc(
       physics.getTolerancesScale(),
       0,
       physxSimulationCallbackInstance
@@ -71,65 +71,82 @@ var physics = (() => {
     scene = physics.createScene(sceneDesc)
 
     material = physics.createMaterial(0.6, 0.6, 0.2)
-    vectorMaterial = new PhysX.VectorPxMaterial()
+    vectorMaterial = new PX.VectorPxMaterial()
     vectorMaterial.push_back(material)
 
-    cooking = PhysX.PxCreateCooking(
+    cooking = PX.PxCreateCooking(
       version,
       foundation,
-      new PhysX.PxCookingParams(physics.getTolerancesScale())
+      new PX.PxCookingParams(physics.getTolerancesScale())
     )
 
-    PhysX.physics = physics;
-    PhysX.scene = scene;
-    PhysX.cooking = cooking;
+    PX.physics = physics;
+    PX.scene = scene;
+    PX.cooking = cooking;
   }
 
   const init = entities => {
     entities.forEach(entity => {
       let geometry
       if (entity.body.type === 'box') {
-        if (!BOX_GEO) BOX_GEO = new PhysX.PxBoxGeometry(0.5, 0.5, 0.5);
+        if (!BOX_GEO) BOX_GEO = new PX.PxBoxGeometry(0.5, 0.5, 0.5);
         const hx = entity.body.size[0] / 2;
         const hy = entity.body.size[1] / 2;
         const hz = entity.body.size[2] / 2;
         BOX_GEO.halfExtents = { x: hx, y: hy, z: hz }
         geometry = BOX_GEO
       } else if (entity.body.type === 'sphere') {
-        if (!SPHERE_GEO) SPHERE_GEO = new PhysX.PxSphereGeometry(0.5)
+        if (!SPHERE_GEO) SPHERE_GEO = new PX.PxSphereGeometry(0.5)
         SPHERE_GEO.radius = entity.body.size
         geometry = SPHERE_GEO
       } else if (entity.body.type === 'convex') {
         const g = entity.model.geometry;
         const l = g.vertices.length;
-        const vArr = new PhysX.PxVec3Vector();
+        const vArr = new PX.PxVec3Vector();
         for (let i = 0; i < l; i++) {
           vArr.push_back(g.vertices[i])
         }
         const convexMesh = cooking.createConvexMesh(vArr, physics);
-        const meshScale = new PhysX.PxMeshScale({ x: 1, y: 1, z: 1 }, { x: 0, y: 0, z: 0, w: 1 })
-        geometry = new PhysX.PxConvexMeshGeometry(convexMesh, meshScale, new PhysX.PxConvexMeshGeometryFlags(1))
+        const meshScale = new PX.PxMeshScale({ x: 1, y: 1, z: 1 }, { x: 0, y: 0, z: 0, w: 1 })
+        geometry = new PX.PxConvexMeshGeometry(convexMesh, meshScale, new PX.PxConvexMeshGeometryFlags(1))
       } else if (entity.body.type === 'trimesh') {
         const g = entity.model.geometry;
         const l = g.vertices.length;
-        const vArr = new PhysX.PxVec3Vector();
+        const vArr = new PX.PxVec3Vector();
         for (let i = 0; i < l; i++) {
           vArr.push_back(g.vertices[i])
         }
         const l2 = g.faces.length;
-        const iArr = new PhysX.PxU16Vector();
+        const iArr = new PX.PxU16Vector();
         for (let i = 0; i < l2; i++) {
-          iArr.push_back(g.faces[i].a);iArr.push_back(g.faces[i].b);iArr.push_back(g.faces[i].c);
+          iArr.push_back(g.faces[i].a); iArr.push_back(g.faces[i].b); iArr.push_back(g.faces[i].c);
         }
-        const trimesh = cooking.createTriMesh2(vArr, iArr, physics);
-        const meshScale = new PhysX.PxMeshScale({ x: 1, y: 1, z: 1 }, { x: 0, y: 0, z: 0, w: 1 })        
-        geometry = new PhysX.PxTriangleMeshGeometry(trimesh, meshScale, new PhysX.PxMeshGeometryFlags(0))
+        const trimesh = cooking.createTriMeshExt(vArr, iArr, physics);
+        const meshScale = new PX.PxMeshScale({ x: 1, y: 1, z: 1 }, { x: 0, y: 0, z: 0, w: 1 })
+        geometry = new PX.PxTriangleMeshGeometry(trimesh, meshScale, new PX.PxMeshGeometryFlags(0))
       } else if (entity.body.type === 'terrain') {
-        return;
+        const height = entity.height;
+        const rows = height.rows;
+        const cols = height.cols;
+        const heightArr = new PX.PxHeightFieldSampleVector();
+        const rowScale = 1;
+        const colScale = 1;
+        const heightScale = 1 / 1000;
+        let p = 0
+        for (var j = 0; j < cols; j++) {
+          for (var i = 0; i < rows; i++) {
+            const s = new PX.PxHeightFieldSample();
+            s.height = height.data[p] / heightScale;
+            heightArr.push_back(s);
+            p++;
+          }
+        }
+        const heightField = cooking.createHeightFieldExt(cols, rows, heightArr, physics);
+        geometry = new PX.PxHeightFieldGeometry(heightField, new PX.PxMeshGeometryFlags(1), heightScale, rowScale, colScale);
       }
-      const flags = new PhysX.PxShapeFlags(
-        PhysX.PxShapeFlag.eSCENE_QUERY_SHAPE.value |
-        PhysX.PxShapeFlag.eSIMULATION_SHAPE.value
+      const flags = new PX.PxShapeFlags(
+        PX.PxShapeFlag.eSCENE_QUERY_SHAPE.value |
+        PX.PxShapeFlag.eSIMULATION_SHAPE.value
       )
       // var material2 = physics.createMaterial(0.2, 0.2, 0.2)
       const shape = physics.createShape(geometry, material, true, flags)
@@ -140,7 +157,7 @@ var physics = (() => {
           z: entity.transform.position[2],
         },
         rotation: {
-          w: entity.transform.rotation[3], // PhysX uses WXYZ quaternions,
+          w: entity.transform.rotation[3], // PX uses WXYZ quaternions,
           x: entity.transform.rotation[0],
           y: entity.transform.rotation[1],
           z: entity.transform.rotation[2],
@@ -171,7 +188,7 @@ var physics = (() => {
       shapes.push(shape);
       geometries.push(geometry);
       scene.addActor(body, null)
-      shape.setSimulationFilterData(new PhysX.PxFilterData(1, 1, 0, 0))
+      shape.setSimulationFilterData(new PX.PxFilterData(1, 1, 0, 0))
     })
   }
 
@@ -220,11 +237,11 @@ var physics = (() => {
 
   const updateIsTrigger = (index, v) => {
     if (v) {
-      shapes[index].setFlag(PhysX.PxShapeFlag.eSIMULATION_SHAPE, !v)
-      shapes[index].setFlag(PhysX.PxShapeFlag.eTRIGGER_SHAPE, v);
+      shapes[index].setFlag(PX.PxShapeFlag.eSIMULATION_SHAPE, !v)
+      shapes[index].setFlag(PX.PxShapeFlag.eTRIGGER_SHAPE, v);
     } else {
-      shapes[index].setFlag(PhysX.PxShapeFlag.eTRIGGER_SHAPE, v);
-      shapes[index].setFlag(PhysX.PxShapeFlag.eSIMULATION_SHAPE, !v)
+      shapes[index].setFlag(PX.PxShapeFlag.eTRIGGER_SHAPE, v);
+      shapes[index].setFlag(PX.PxShapeFlag.eSIMULATION_SHAPE, !v)
     }
   }
 

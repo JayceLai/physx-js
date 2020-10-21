@@ -85,12 +85,17 @@ var renderer = (() => {
           entity.model.size[2]
         )
       } else if (entity.model.type == 'terrain') {
-        geometry = new THREE.PlaneBufferGeometry(terrainWidth - 1, terrainDepth - 1, terrainWidth - 1, terrainDepth - 1);
+        geometry = new THREE.PlaneBufferGeometry(
+          entity.height.rows - 1, 
+          entity.height.cols - 1, 
+          entity.height.rows - 1, 
+          entity.height.cols - 1
+        );
         geometry.rotateX(- Math.PI / 2);
         var vertices = geometry.attributes.position.array;
         for (var i = 0, j = 0, l = vertices.length; i < l; i++, j += 3) {
           // j + 1 because it is the y component that we modify
-          vertices[j + 1] = entity.model.data[i];
+          vertices[j + 1] = entity.height.data[i];
         }
         geometry.computeVertexNormals();
         material = new THREE.MeshPhongMaterial({ color: 0xC7C7C7 });
