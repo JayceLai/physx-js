@@ -52,9 +52,9 @@ var renderer = (() => {
   controls.maxDistance = 500
   controls.maxPolarAngle = Math.PI / 2
 
-  const material1 = new THREE.MeshStandardMaterial({ color: '#65C7F1' })
-  const material2 = new THREE.MeshStandardMaterial({ color: '#A52701' })
-  const material3 = new THREE.MeshStandardMaterial({ color: '#C0C700' })
+  const static = new THREE.MeshPhongMaterial({ color: 0xC7C7C7 });
+  const dynamic = new THREE.MeshStandardMaterial({ color: '#C0C700' })
+  const trigger = new THREE.MeshStandardMaterial({ color: '#65C7F1' })
 
   container.appendChild(renderer.domElement)
 
@@ -63,22 +63,20 @@ var renderer = (() => {
   const init = entities => {
     entities.forEach(entity => {
       let geometry
-      let material
+      let material = entity.body.dynamic ? dynamic : static;
+      let scale = [1, 1, 1]
       if (entity.model.type === 'box') {
-        material = material1
         geometry = new THREE.BoxGeometry(
           entity.model.size[0],
           entity.model.size[1],
           entity.model.size[2]
         )
       } else if (entity.model.type === 'sphere') {
-        material = material2
         geometry = new THREE.SphereGeometry(
           entity.model.size,
           32, 32
         )
       } else if (entity.model.type == 'cone') {
-        material = material3
         geometry = new THREE.ConeGeometry(
           entity.model.size[0],
           entity.model.size[1],
@@ -86,25 +84,30 @@ var renderer = (() => {
         )
       } else if (entity.model.type == 'terrain') {
         geometry = new THREE.PlaneBufferGeometry(
-          entity.height.rows - 1, 
-          entity.height.cols - 1, 
-          entity.height.rows - 1, 
+          entity.height.rows - 1,
+          entity.height.cols - 1,
+          entity.height.rows - 1,
           entity.height.cols - 1
         );
         geometry.rotateX(- Math.PI / 2);
         var vertices = geometry.attributes.position.array;
         for (var i = 0, j = 0, l = vertices.length; i < l; i++, j += 3) {
           // j + 1 because it is the y component that we modify
-          vertices[j + 1] = entity.height.data[i];
+          vertices[j + 1] = entity.height.data[i] / entity.height.heiScale;
         }
         geometry.computeVertexNormals();
-        material = new THREE.MeshPhongMaterial({ color: 0xC7C7C7 });
+        scale[0] = entity.height.rowScale
+        scale[1] = entity.height.heiScale
+        scale[2] = entity.height.colScale
       }
       const mesh = new THREE.Mesh(geometry, material)
       mesh.position.fromArray(entity.transform.position)
       mesh.quaternion.fromArray(entity.transform.rotation)
       mesh.castShadow = true
       mesh.receiveShadow = true
+      mesh.scale.x = scale[0]
+      mesh.scale.y = scale[1]
+      mesh.scale.z = scale[2]
       entity.model.geometry = geometry
       entity.model.mesh = mesh
       entity.model.material = material

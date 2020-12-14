@@ -71,7 +71,9 @@ var physics = (() => {
     scene = physics.createScene(sceneDesc)
 
     material = physics.createMaterial(0.6, 0.6, 0.2)
-    vectorMaterial = new PX.VectorPxMaterial()
+    material.setFrictionCombineMode(PX.PxCombineMode.eMULTIPLY)
+    material.setRestitutionCombineMode(PX.PxCombineMode.eMULTIPLY)
+    vectorMaterial = new PX.PxMaterialVector()
     vectorMaterial.push_back(material)
 
     cooking = PX.PxCreateCooking(
@@ -88,16 +90,17 @@ var physics = (() => {
   const init = entities => {
     entities.forEach(entity => {
       let geometry
+      let offset = [0, 0, 0]
       if (entity.body.type === 'box') {
-        if (!BOX_GEO) BOX_GEO = new PX.PxBoxGeometry(0.5, 0.5, 0.5);
+        if (!BOX_GEO) BOX_GEO = new PX.PxBoxGeometry({ x: 0.5, y: 0.5, z: 0.5 });
         const hx = entity.body.size[0] / 2;
         const hy = entity.body.size[1] / 2;
         const hz = entity.body.size[2] / 2;
-        BOX_GEO.halfExtents = { x: hx, y: hy, z: hz }
+        BOX_GEO.setHalfExtents({ x: hx, y: hy, z: hz });
         geometry = BOX_GEO
       } else if (entity.body.type === 'sphere') {
         if (!SPHERE_GEO) SPHERE_GEO = new PX.PxSphereGeometry(0.5)
-        SPHERE_GEO.radius = entity.body.size
+        SPHERE_GEO.setRadius(entity.body.size);
         geometry = SPHERE_GEO
       } else if (entity.body.type === 'convex') {
         const g = entity.model.geometry;
@@ -129,27 +132,33 @@ var physics = (() => {
         const rows = height.rows;
         const cols = height.cols;
         const heightArr = new PX.PxHeightFieldSampleVector();
-        const rowScale = 1;
-        const colScale = 1;
-        const heightScale = 1 / 1000;
+        const rowScale = height.rowScale;
+        const colScale = height.colScale;
+        const heiScale = height.heiScale;
         let p = 0
         for (var j = 0; j < cols; j++) {
           for (var i = 0; i < rows; i++) {
             const s = new PX.PxHeightFieldSample();
-            s.height = height.data[p] / heightScale;
+            s.height = height.data[p] / heiScale;
             heightArr.push_back(s);
             p++;
           }
         }
         const heightField = cooking.createHeightFieldExt(cols, rows, heightArr, physics);
-        geometry = new PX.PxHeightFieldGeometry(heightField, new PX.PxMeshGeometryFlags(1), heightScale, rowScale, colScale);
+        geometry = new PX.PxHeightFieldGeometry(heightField, new PX.PxMeshGeometryFlags(1), heiScale, rowScale, colScale);
+        offset = entity.body.offset;
       }
       const flags = new PX.PxShapeFlags(
         PX.PxShapeFlag.eSCENE_QUERY_SHAPE.value |
         PX.PxShapeFlag.eSIMULATION_SHAPE.value
       )
-      // var material2 = physics.createMaterial(0.2, 0.2, 0.2)
       const shape = physics.createShape(geometry, material, true, flags)
+      if (offset[0] || offset[1] || offset[2]) {
+        shape.setLocalPose({
+          translation: { x: offset[0], y: offset[1], z: offset[2], },
+          rotation: { w: 1, x: 0, y: 0, z: 0, },
+        });
+      }
       const transform = {
         translation: {
           x: entity.transform.position[0],
@@ -188,7 +197,7 @@ var physics = (() => {
       shapes.push(shape);
       geometries.push(geometry);
       scene.addActor(body, null)
-      shape.setSimulationFilterData(new PX.PxFilterData(1, 1, 0, 0))
+      shape.setSimulationFilterData({ word0: 1, word1: 1, word2: 0, word3: 0 })
     })
   }
 
@@ -206,7 +215,7 @@ var physics = (() => {
         entity.transform.rotation[1] = transform.rotation.y
         entity.transform.rotation[2] = transform.rotation.z
         entity.transform.rotation[3] = transform.rotation.w
-        body.setGlobalPose(transform, true)
+        // body.setGlobalPose(transform, true)
       }
     })
   }
@@ -218,11 +227,11 @@ var physics = (() => {
       renderer.meshes[entity.id].scale.x = size[0] / entity.model.size[0];
       renderer.meshes[entity.id].scale.y = size[1] / entity.model.size[1];
       renderer.meshes[entity.id].scale.z = size[2] / entity.model.size[2];
-      geo.halfExtents = { x: size[0] / 2, y: size[1] / 2, z: size[2] / 2 }
+      geo.setHalfExtents({ x: size[0] / 2, y: size[1] / 2, z: size[2] / 2 });
     } else if (type == 1) {//sphere
       renderer.meshes[entity.id].scale.set(1, 1, 1)
       renderer.meshes[entity.id].scale.multiplyScalar(size / entity.model.size);
-      geo.radius = size
+      geo.setRadius(size);
     }
     entity.body.size = size
     shapes[index].setGeometry(geo)
@@ -232,7 +241,7 @@ var physics = (() => {
     material.setStaticFriction(sf);
     material.setDynamicFriction(df);
     material.setRestitution(r);
-    // shapes[index].setMaterials(vectorMaterial);
+    shapes[index].setMaterials(vectorMaterial);
   }
 
   const updateIsTrigger = (index, v) => {
