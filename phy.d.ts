@@ -14,7 +14,7 @@ interface FilterData {
     word3: number
 }
 
-declare namespace PhysX {
+declare namespace phy {
     /// Base ///
 
     const physics: Physics
