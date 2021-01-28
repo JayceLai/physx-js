@@ -1,3 +1,5 @@
+/// <reference path="./phy.d.ts" />
+
 // tslint:disable
 declare function PhysX (): Promise<void>;
 
