@@ -11,7 +11,7 @@
     "url": "https://github.com/JayceLai/physx-js/issues"
   },
   "devDependencies": {
-    "physx": "prestomation/PhysX#emscripten_wip"
+    "physx": "JayceLai/PhysX#cocos-dev"
   },
   "scripts": {
     "generate": "docker run --rm -v $(pwd):/src trzeci/emscripten ./generate.sh",
